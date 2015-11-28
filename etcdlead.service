@@ -1,0 +1,8 @@
+[Unit]
+Requires=etcd.service
+After=etcd.service
+
+[Service]
+ExecStart=/usr/sbin/etcdlead
+
+User=admin

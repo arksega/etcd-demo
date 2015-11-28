@@ -1,0 +1,38 @@
+#!/bin/env python3
+''' Script to check and updale the leader ip'''
+from time import sleep
+import urllib.request
+import socket
+import json
+
+def imleader():
+    with urllib.request.urlopen('http://localhost:2379/v2/stats/self') as f:
+        data = json.loads(f.read().decode('utf-8'))
+    return data['state'] == 'StateLeader'
+
+def local_ip():
+    return socket.gethostbyname(socket.gethostname())
+
+def put_etcd(values):
+    for key, value in values.items():
+        url = 'http://localhost:2379/v2/keys/{}'.format(key)
+        with urllib.request.urlopen(url) as f:    
+            data = json.loads(f.read().decode('utf-8'))
+        data = data['node']
+        if data['value'] != value:
+            print('Refresh!')
+            url = 'http://localhost:2379/v2/keys/{}'.format(key)
+            value = 'value={}'.format(value)
+            req = urllib.request.Request(
+                url=url,
+                data=str.encode(value),
+                method='PUT')
+            with urllib.request.urlopen(req) as f:
+                print(f.read().decode('utf-8'))
+
+if __name__ == '__main__':
+    while True:
+        if imleader():
+            put_etcd({'leaderip': local_ip()})
+        sleep(3)
+
